@@ -290,14 +290,14 @@ def fig3_positional_preferences(base: list[dict], outdir: Path):
 
     # Annotate the gradients for E and N
     ax.annotate(
-        "$+0.86$ pp/pos",
+        "$+0.60$ pp/pos",
         xy=(1.2, -0.55),
         fontsize=5.5,
         fontstyle="italic",
         color="black",
     )
     ax.annotate(
-        "$+1.07$ pp/pos",
+        "$+0.32$ pp/pos",
         xy=(3.05, -0.7),
         fontsize=5.5,
         fontstyle="italic",
@@ -309,6 +309,69 @@ def fig3_positional_preferences(base: list[dict], outdir: Path):
     fig.savefig(outdir / "fig_positional.png")
     plt.close(fig)
     print("  [OK] fig_positional.pdf")
+
+
+def fig4_gradcam_comparison(outdir: Path):
+    """2x2 panel: same image under mirror-ordering pipelines E->N vs N->E."""
+    from PIL import Image
+
+    output_base = Path(__file__).resolve().parent.parent.parent / "src" / "output" / "base"
+
+    panels = {
+        (0, 0): output_base / "EqualizationTransform -> NormalizeTransform" / "gradcam_pos_img_00002.png",
+        (0, 1): output_base / "EqualizationTransform -> NormalizeTransform" / "gradcam_neg_img_00002.png",
+        (1, 0): output_base / "NormalizeTransform -> EqualizationTransform" / "gradcam_pos_img_00002.png",
+        (1, 1): output_base / "NormalizeTransform -> EqualizationTransform" / "gradcam_neg_img_00002.png",
+    }
+
+    for pos, path in panels.items():
+        if not path.exists():
+            print(f"  [SKIP] fig_gradcam.pdf — missing {path.name}", file=sys.stderr)
+            return
+
+    row_labels = [
+        r"E $\to$ N ($\alpha = +0.58$ pp)",
+        r"N $\to$ E ($\alpha = -1.33$ pp)",
+    ]
+    col_labels = ["Positive-class activation", "Negative-class activation"]
+
+    fig, axes = plt.subplots(
+        2, 2,
+        figsize=(IEEE_COL_WIDTH, IEEE_COL_WIDTH * 0.95),
+        constrained_layout=True,
+    )
+
+    for (r, c), path in panels.items():
+        img = np.array(Image.open(path))
+        axes[r, c].imshow(img, interpolation="lanczos")
+        axes[r, c].set_xticks([])
+        axes[r, c].set_yticks([])
+        for spine in axes[r, c].spines.values():
+            spine.set_linewidth(0.4)
+
+    for c, label in enumerate(col_labels):
+        axes[0, c].set_title(label, fontsize=IEEE_TICK_SIZE, pad=4)
+
+    for r, label in enumerate(row_labels):
+        axes[r, 0].set_ylabel(label, fontsize=IEEE_TICK_SIZE, labelpad=4)
+
+    panel_ids = [["(a)", "(b)"], ["(c)", "(d)"]]
+    for r in range(2):
+        for c in range(2):
+            axes[r, c].text(
+                0.03, 0.95, panel_ids[r][c],
+                transform=axes[r, c].transAxes,
+                fontsize=IEEE_TICK_SIZE,
+                fontweight="bold",
+                va="top",
+                color="white",
+                bbox={"boxstyle": "round,pad=0.15", "facecolor": "black", "alpha": 0.5, "linewidth": 0},
+            )
+
+    fig.savefig(outdir / "fig_gradcam.pdf")
+    fig.savefig(outdir / "fig_gradcam.png")
+    plt.close(fig)
+    print("  [OK] fig_gradcam.pdf")
 
 
 def main():
@@ -329,6 +392,7 @@ def main():
     fig1_length_effect(base, outdir)
     fig2_variance_decomposition(base, outdir)
     fig3_positional_preferences(base, outdir)
+    fig4_gradcam_comparison(outdir)
 
     print("All figures generated.")
 
