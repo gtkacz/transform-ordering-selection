@@ -2,6 +2,8 @@ import torch
 from torch import nn
 
 torch.backends.cudnn.benchmark = True
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
 
 
 class BinaryCNN(nn.Module):
@@ -63,6 +65,6 @@ class BinaryCNN(nn.Module):
 		x = self.conv2(x)  # Apply second convolutional block
 		x = self.conv3(x)  # Apply third convolutional block
 		x = self.conv4(x)  # Apply fourth convolutional block
-		x = x.view(-1, 256 * 8 * 8)  # Flatten the tensor to prepare for fully connected layers
+		x = x.contiguous().view(-1, 256 * 8 * 8)  # Flatten the tensor (channels-last compatible)
 		x = self.fc_layers(x)  # Apply fully connected layers
 		return x

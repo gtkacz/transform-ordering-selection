@@ -1,0 +1,158 @@
+ [project]
+ name = "tcc"
+ version = "0.1.0"
+ description = "TCC project"
+ readme = "README.md"
+ requires-python = ">=3.12,<3.14"
+ dependencies = [
+     "scikit-image",
+     "matplotlib",
+     "jupyter",
+     "opencv-python",
+     "loguru",
+     "datasets",
+     "pynimbar",
+     "scikit-learn",
+     "seaborn",
+     "pandas",
+     "pyperclip",
+     "tabulate",
+     "opencv-python>=4.10.0.84",
+     "torch",
+     "torchvision",
+     "kornia>=0.7.0",
+     "ipykernel",
+     "grad-cam",
+ ]
+
+ [tool.uv]
+ # Use the standard `project.dependencies` as the source of truth.
+
+ [[tool.uv.index]]
+ name = "pytorch-cu130"
+ url = "https://download.pytorch.org/whl/cu130"
+ explicit = true
+
+ [tool.uv.sources]
+ torch = { index = "pytorch-cu130" }
+ torchvision = { index = "pytorch-cu130" }
+
+ [tool.ruff]
+ exclude = [
+     ".bzr",
+     ".direnv",
+     ".eggs",
+     ".git",
+     ".git-rewrite",
+     ".hg",
+     ".ipynb_checkpoints",
+     ".mypy_cache",
+     ".nox",
+     ".pants.d",
+     ".pyenv",
+     ".pytest_cache",
+     ".pytype",
+     ".ruff_cache",
+     ".svn",
+     ".tox",
+     ".venv",
+     ".vscode",
+     "__pypackages__",
+     "_build",
+     "buck-out",
+     "build",
+     "dist",
+     "node_modules",
+     "site-packages",
+     "venv",
+     "__*.py",
+ ]
+ line-length = 120
+ indent-width = 4
+ target-version = "py313"
+
+ [tool.ruff.lint]
+ preview = true
+ select = ["ALL"]
+ ignore = [
+     "E721",
+     "D211",
+     "D212",
+     "W191",
+     "D206",
+     "D404",
+     "D203",
+     "CPY001",
+     "EM102",
+     "TRY003",
+     "PLR0904",
+     "D205",
+     "TID252",
+     "D100",
+     "D200",
+     "S603",
+     "S404",
+     "S602",
+     "TRY301",
+     "C417",
+     "FA100",
+     "EM101",
+     "PLR2004",
+     "FURB113",
+     "E741",
+     "UP007",
+     "UP045",
+     "PLR0913",
+     "PLR0917",
+     "PLW2901",
+     "FBT001",
+     "FBT002",
+     "RUF001",
+     "RUF002",
+     "ARG001",
+ ]
+ extend-select = ["DOC"]
+ fixable = ["ALL"]
+ unfixable = []
+ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+ [tool.ruff.format]
+ preview = true
+ quote-style = "double"
+ docstring-code-format = true
+ indent-style = "tab"
+ skip-magic-trailing-comma = false
+ line-ending = "auto"
+
+ [tool.ruff.lint.per-file-ignores]
+ "**/__init__.py" = ["F401"]
+ "manage.py" = ["PLC0415", "DOC501", "ANN201"]
+ "**/{tests,docs,tools}/*" = [
+     "D102",
+     "ANN201",
+     "PT009",
+     "DTZ001",
+     "PT027",
+     "D101",
+     "D100",
+     "CPY001",
+     "C409",
+     "C405",
+     "C409",
+     "BLE001",
+     "S311",
+     "S301",
+     "S403",
+     "D104",
+ ]
+ "shieldsio_plus/scripts/*" = ["D103"]
+ "shieldsio_plus/common/enums/better_enum.py" = ["N805"]
+
+ [tool.ruff.lint.flake8-quotes]
+ inline-quotes = "double"
+
+ [tool.ruff.lint.pydocstyle]
+ convention = "google"
+
+ [tool.ruff.lint.pycodestyle]
+ max-doc-length = 320

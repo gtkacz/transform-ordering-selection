@@ -1,8 +1,6 @@
 from enum import Enum as E
 from enum import EnumMeta
 
-from torch import nn
-
 
 class MetaEnum(EnumMeta):
 	@property
@@ -56,31 +54,3 @@ class EqualizationMethod(Enum):
 	FELZENSZWALB = "felzenszwalb"
 	QUICKSHIFT = "quickshift"
 	SLIC = "slic"
-
-
-class LossFunction(Enum):
-	L1 = nn.L1Loss
-	NLL = nn.NLLLoss
-	PoissonNLL = nn.PoissonNLLLoss
-	GaussianNLL = nn.GaussianNLLLoss
-	KLDiv = nn.KLDivLoss
-	MSE = nn.MSELoss
-	BCE = nn.BCELoss
-	BCEWithLogits = nn.BCEWithLogitsLoss
-	HingeEmbedding = nn.HingeEmbeddingLoss
-	MultiLabelMargin = nn.MultiLabelMarginLoss
-	SmoothL1 = nn.SmoothL1Loss
-	Huber = nn.HuberLoss
-	SoftMargin = nn.SoftMarginLoss
-	CrossEntropy = nn.CrossEntropyLoss
-	MultiLabelSoftMargin = nn.MultiLabelSoftMarginLoss
-	CosineEmbedding = nn.CosineEmbeddingLoss
-	MarginRanking = nn.MarginRankingLoss
-	MultiMargin = nn.MultiMarginLoss
-	TripletMargin = nn.TripletMarginLoss
-	TripletMarginWithDistance = nn.TripletMarginWithDistanceLoss
-	CTC = nn.CTCLoss
-
-
-class Optimizer(Enum):
-	pass

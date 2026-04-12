@@ -1,64 +1,184 @@
-import os
+"""Dataset loading, splitting, and DataLoader construction."""
 
+from collections.abc import Sequence
+from pathlib import Path
+
+import numpy as np
+import torch
 from PIL import Image
-from torch.utils.data import Dataset
+from torch import Tensor, nn
+from torch.utils.data import DataLoader, Dataset, Subset
 from torchvision import transforms
+
+from .config import TrainingConfig
+from .types import TestingDataset, TrainingDataset, ValidationDataset
 
 
 class SkinDiseaseDataset(Dataset):
-	"""
-	A custom Dataset class for skin images.
-	Assumes images are stored in two folders: '/dataset/healthy' for healthy skin images
-	and '/dataset/diseased' for diseased skin images.
+	"""Custom Dataset for binary skin disease classification.
+
+	Loads images from two subdirectories: 'healthy' (label=0) and 'diseased' (label=1).
 	"""
 
 	def __init__(
 		self,
-		root_dir: str,
+		root_dir: str | Path,
 		transform: transforms.Compose | None = None,
 		max_samples: int = 10_000,
-	):
-		"""
+	) -> None:
+		"""Initialize the dataset.
+
 		Args:
-			root_dir (str): The root directory of the dataset.
-			transform (transforms.Compose, optional): Optional transform to be applied on a sample.
-			max_samples (int): The maximum number of samples to load from the dataset.
+			root_dir: Root directory containing 'healthy' and 'diseased' subdirectories.
+			transform: Optional torchvision transforms to apply to each image.
+			max_samples: Maximum number of samples to load per class.
 		"""
-		self.root_dir = root_dir
+		self.root_dir = Path(root_dir)
 		self.transform = transform
-		self.labels = []
-		self.image_paths = []
+		self.labels: list[int] = []
+		self.image_paths: list[Path] = []
+
+		valid_extensions = {".jpg", ".jpeg", ".png"}
 
 		for label, condition in enumerate(["healthy", "diseased"]):
-			condition_path = os.path.join(self.root_dir, condition)
+			condition_path = self.root_dir / condition
+			count = 0
 
-			for filename in os.listdir(condition_path):
-				if filename.split(".")[-1] not in ["jpg", "jpeg", "png"]:
+			for filepath in sorted(condition_path.iterdir()):
+				if filepath.suffix.lower() not in valid_extensions:
 					continue
 
-				self.image_paths.append(os.path.join(condition_path, filename))
+				self.image_paths.append(filepath)
 				self.labels.append(label)
+				count += 1
 
-				if len(self.image_paths) % max_samples == 0 and self.image_paths:
+				if count >= max_samples:
 					break
 
 	def __len__(self) -> int:
-		"""
-		Returns the total number of samples in the dataset.
+		"""Return the total number of samples in the dataset.
+
+		Returns:
+			Number of samples.
 		"""
 		return len(self.image_paths)
 
 	def __getitem__(self, idx: int) -> tuple[Image.Image, int]:
-		"""
-		Generates one sample of data.
-		"""
-		img_path = self.image_paths[idx]
+		"""Load and return one sample.
 
-		label = self.labels[idx]
+		Args:
+			idx: Sample index.
 
-		image = Image.open(img_path).convert("RGB")
+		Returns:
+			Tuple of (image, label).
+		"""
+		image = Image.open(self.image_paths[idx]).convert("RGB")
 
 		if self.transform:
 			image = self.transform(image)
 
-		return image, label
+		return image, self.labels[idx]
+
+
+def split_datasets(
+	dataset: Dataset[Tensor],
+	training_ratio: float,
+	testing_ratio: float,
+	validation_ratio: float,
+	seed: int = 42,
+) -> tuple[TrainingDataset, TestingDataset, ValidationDataset]:
+	"""Split a dataset into training, testing, and validation subsets.
+
+	Args:
+		dataset: The full dataset to split.
+		training_ratio: Fraction of data for training.
+		testing_ratio: Fraction of data for testing.
+		validation_ratio: Fraction of data for validation.
+		seed: Random seed for reproducibility.
+
+	Returns:
+		Tuple of (training_subset, testing_subset, validation_subset).
+	"""
+	dataset_size = len(dataset)  # type: ignore[arg-type]
+	indices = list(range(dataset_size))
+
+	torch.manual_seed(seed)
+	np.random.seed(seed)  # noqa: NPY002
+
+	if torch.cuda.is_available():
+		torch.cuda.manual_seed_all(seed)
+
+	np.random.shuffle(indices)  # noqa: NPY002
+
+	training_split = int(np.floor(training_ratio * dataset_size))
+	testing_split = int(np.floor(testing_ratio * dataset_size))
+
+	training_indices = indices[:training_split]
+	testing_indices = indices[training_split : training_split + testing_split]
+	validation_indices = indices[training_split + testing_split :]
+
+	return (
+		Subset(dataset, training_indices),
+		Subset(dataset, testing_indices),
+		Subset(dataset, validation_indices),
+	)
+
+
+def get_data_loaders(
+	training_config: TrainingConfig,
+	cpu_transforms: Sequence[nn.Module | object] | None = None,
+	training_ratio: float = 0.8,
+	testing_ratio: float = 0.1,
+	validation_ratio: float = 0.1,
+	seed: int = 47,
+) -> tuple[DataLoader, DataLoader, DataLoader]:
+	"""Create train/test/validation DataLoaders for the skin disease dataset.
+
+	The DataLoader applies only CPU-side transforms (Resize + ToTensor + optional extras).
+	GPU-side transforms (kornia) are applied separately after .to(device).
+
+	Args:
+		training_config: Training hyperparameters (batch_size, num_workers, etc.).
+		cpu_transforms: Additional CPU-side transforms applied after Resize + ToTensor.
+		training_ratio: Fraction of data for training.
+		testing_ratio: Fraction of data for testing.
+		validation_ratio: Fraction of data for validation.
+		seed: Random seed for dataset splitting.
+
+	Returns:
+		Tuple of (train_loader, test_loader, validation_loader).
+	"""
+	base_transforms: list[object] = [
+		transforms.Resize((training_config.resize_dim, training_config.resize_dim)),
+		transforms.ToTensor(),
+	]
+	if cpu_transforms:
+		base_transforms.extend(cpu_transforms)
+
+	transform = transforms.Compose(base_transforms)
+
+	loader_kwargs: dict = {
+		"batch_size": training_config.batch_size,
+		"shuffle": training_config.shuffle,
+		"num_workers": training_config.num_workers,
+		"pin_memory": training_config.pin_memory,
+	}
+
+	if training_config.num_workers > 0:
+		loader_kwargs["persistent_workers"] = True
+		loader_kwargs["prefetch_factor"] = 4
+
+	base_dataset = SkinDiseaseDataset(root_dir="dataset", transform=transform)
+	train_dataset, test_dataset, validation_dataset = split_datasets(
+		base_dataset,
+		training_ratio,
+		testing_ratio,
+		validation_ratio,
+		seed,
+	)
+
+	return (
+		DataLoader(train_dataset, **loader_kwargs),
+		DataLoader(test_dataset, **loader_kwargs),
+		DataLoader(validation_dataset, **loader_kwargs),
+	)

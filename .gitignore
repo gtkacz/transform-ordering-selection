@@ -159,6 +159,10 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# Pipeline output
+output/
+params/
+
 # Custom
 .obsidian/
 Template LaTeX/
@@ -171,3 +175,7 @@ _*
 *.pptx
 .ruff_cache/
 .qodo
+.serena/
+*.pdf
+*.zip
+*.xls
