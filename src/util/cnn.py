@@ -1,9 +1,12 @@
 import torch
 from torch import nn
 
-torch.backends.cudnn.benchmark = True
-torch.backends.cuda.matmul.allow_tf32 = True
-torch.backends.cudnn.allow_tf32 = True
+
+def configure_cuda() -> None:
+	"""Enable CUDA performance optimizations. Call once at program start."""
+	torch.backends.cudnn.benchmark = True
+	torch.backends.cuda.matmul.allow_tf32 = True
+	torch.backends.cudnn.allow_tf32 = True
 
 
 class BinaryCNN(nn.Module):

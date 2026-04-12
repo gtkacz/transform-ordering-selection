@@ -83,33 +83,6 @@ def generate_heatmap(
 	return grayscale_cam[0]
 
 
-def generate_heatmaps_batched(
-	cam: GradCAM,
-	images: list[torch.Tensor],
-	target_categories: list[int],
-	gpu_transforms: list[nn.Module] | None = None,
-) -> list[np.ndarray]:
-	"""Generate heatmaps for multiple images in a single batched forward pass.
-
-	Args:
-		cam: GradCAM instance.
-		images: List of image tensors, each of shape (C, H, W).
-		target_categories: List of target categories (one per image).
-		gpu_transforms: Optional GPU-side preprocessing transforms.
-
-	Returns:
-		List of heatmap arrays, each of shape (H, W) with values in [0, 1].
-	"""
-	batch = torch.stack(images)
-
-	if gpu_transforms:
-		batch = apply_gpu_transforms(batch, gpu_transforms)
-
-	targets = [BinaryClassifierTarget(cat) for cat in target_categories]
-	grayscale_cams = cam(input_tensor=batch, targets=targets)
-	return [grayscale_cams[i] for i in range(len(images))]
-
-
 def overlay_heatmap(heatmap: np.ndarray, original_image: np.ndarray) -> np.ndarray:
 	"""Overlay a GradCAM heatmap on an RGB image.
 
@@ -124,51 +97,6 @@ def overlay_heatmap(heatmap: np.ndarray, original_image: np.ndarray) -> np.ndarr
 	if rgb.max() > 1.0:
 		rgb /= 255.0
 	return show_cam_on_image(rgb, heatmap, use_rgb=True)
-
-
-def _collect_predictions(
-	model: nn.Module,
-	test_loader: torch.utils.data.DataLoader,
-	gpu_transforms: list[nn.Module] | None,
-	device: torch.device,
-) -> list[dict]:
-	"""Run the model on the test set and collect per-image predictions.
-
-	Args:
-		model: Trained model in eval mode.
-		test_loader: DataLoader for test data.
-		gpu_transforms: Optional GPU-side preprocessing transforms.
-		device: Target device.
-
-	Returns:
-		List of dicts with keys: image, label, confidence, prediction, image_id.
-	"""
-	model.eval()
-	entries: list[dict] = []
-	img_idx = 0
-
-	with torch.no_grad():
-		for images, labels in test_loader:
-			images_dev = images.to(device, non_blocking=True, memory_format=torch.channels_last)
-			images_proc = apply_gpu_transforms(images_dev, gpu_transforms) if gpu_transforms else images_dev
-
-			with torch.amp.autocast("cuda", enabled=device.type == "cuda"):
-				outputs = model(images_proc).squeeze()
-
-			confidences = outputs.cpu()
-			for j in range(labels.size(0)):
-				conf = confidences[j].item()
-				label = int(labels[j].item())
-				entries.append({
-					"image": images[j],
-					"label": label,
-					"confidence": conf,
-					"prediction": 1 if conf > 0.5 else 0,
-					"image_id": f"img_{img_idx:05d}",
-				})
-				img_idx += 1
-
-	return entries
 
 
 def _pick_class_references(entries: list[dict], target_class: int, n: int) -> list[dict]:
@@ -222,10 +150,7 @@ def _pick_class_references(entries: list[dict], target_class: int, n: int) -> li
 
 
 def select_reference_images(
-	model: nn.Module,
-	test_loader: torch.utils.data.DataLoader,
-	gpu_transforms: list[nn.Module] | None,
-	device: torch.device,
+	predictions: list[dict],
 	n_per_class: int = 3,
 ) -> list[dict]:
 	"""Select reference images spanning the model's confidence distribution.
@@ -234,20 +159,17 @@ def select_reference_images(
 	highest-confidence correct, near-threshold, and misclassified (or fallback).
 
 	Args:
-		model: Trained model in eval mode.
-		test_loader: DataLoader for test data.
-		gpu_transforms: Optional GPU-side preprocessing transforms.
-		device: Target device.
+		predictions: Pre-computed per-sample predictions from
+			``compute_test_metrics_with_samples``.  Each dict must contain
+			keys: image, label, confidence, prediction, image_id.
 		n_per_class: Number of reference images per class.
 
 	Returns:
 		List of dicts with keys: image, label, confidence, prediction, image_id.
 	"""
-	all_entries = _collect_predictions(model, test_loader, gpu_transforms, device)
-
 	selected: list[dict] = []
 	for target_class in [0, 1]:
-		class_entries = [e for e in all_entries if e["label"] == target_class]
+		class_entries = [e for e in predictions if e["label"] == target_class]
 		selected.extend(_pick_class_references(class_entries, target_class, n_per_class))
 
 	return selected

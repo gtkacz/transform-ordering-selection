@@ -21,25 +21,32 @@ def apply_gpu_transforms(batch: Tensor, transforms: Sequence[nn.Module]) -> Tens
 	return batch
 
 
-class NormalizeTransform:
-	def __init__(self, mean=list((0.5,)), std=list((0.5,))):
-		"""
-		Args:
-		    mean (list or tuple): Sequence of means for each channel.
-		    std (list or tuple): Sequence of standard deviations for each channel.
-		"""
-		self.mean = mean
-		self.std = std
+class NormalizeTransform(nn.Module):
+	"""Normalize a tensor image with mean and standard deviation (GPU-compatible via nn.Module)."""
 
-	def __call__(self, tensor):
+	def __init__(
+		self,
+		mean: list[float] | None = None,
+		std: list[float] | None = None,
+	) -> None:
+		"""Args:
+		mean: Per-channel means; defaults to [0.5].
+		std: Per-channel standard deviations; defaults to [0.5].
 		"""
-		Args:
-		    tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
+		super().__init__()
+		mean = mean or [0.5]
+		std = std or [0.5]
+		self.register_buffer("mean", torch.tensor(mean))
+		self.register_buffer("std", torch.tensor(std))
+
+	def forward(self, tensor: Tensor) -> Tensor:
+		"""Args:
+		tensor: Image tensor of shape (C, H, W) or (B, C, H, W).
 
 		Returns:
-		    Tensor: Normalized image.
+			Normalized tensor.
 		"""
-		return TF.normalize(tensor, self.mean, self.std)
+		return TF.normalize(tensor, self.mean.tolist(), self.std.tolist())
 
 
 class DenoiseTransform(nn.Module):

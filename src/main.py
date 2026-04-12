@@ -7,6 +7,7 @@ from pathlib import Path
 
 import torch
 
+from util.cnn import configure_cuda
 from util.config import load_configs
 from util.export import build_results_matrix
 from util.runner import run_full_experiment
@@ -23,6 +24,7 @@ def main() -> None:
 		format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 	)
 
+	configure_cuda()
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	logger.info("Using device: %s", device)
 

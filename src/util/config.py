@@ -50,7 +50,6 @@ class TrainingConfig:
 	shuffle: bool
 	pin_memory: bool
 	resize_dim: int
-	precision_threshold: float
 
 
 def load_configs(
@@ -74,7 +73,6 @@ def load_configs(
 		shuffle=raw["TRAINING"]["shuffle"],
 		pin_memory=raw["TRAINING"]["pin_memory"],
 		resize_dim=raw["TRAINING"]["resize_dim"],
-		precision_threshold=raw["TRAINING"]["precision_threshold"],
 	)
 
 	preprocess = raw["PREPROCESS"]

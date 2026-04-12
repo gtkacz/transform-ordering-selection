@@ -13,7 +13,7 @@ from .cnn import BinaryCNN
 from .config import PreprocessConfig, TrainingConfig
 from .dataset import get_data_loaders
 from .gradcam import run_gradcam_analysis, select_reference_images
-from .metrics import compute_test_metrics
+from .metrics import compute_test_metrics_with_samples
 from .preprocessing import (
 	ColorSpaceTransform,
 	DenoiseTransform,
@@ -43,11 +43,12 @@ def evaluate(
 	num_epochs: int = 10,
 	verbose: bool = True,
 	gpu_transforms: list[nn.Module] | None = None,
-) -> tuple[float, ConfusionMatrix, float, nn.Module]:
+) -> tuple[float, ConfusionMatrix, float, nn.Module, list[dict]]:
 	"""Train a model and evaluate on the test set.
 
 	Orchestrates the full training loop (train_epoch + validate_epoch per epoch)
-	then computes test metrics including confusion matrix.
+	then computes test metrics including confusion matrix and per-sample
+	predictions (used downstream for Grad-CAM reference image selection).
 
 	Args:
 		model: The neural network model.
@@ -62,7 +63,8 @@ def evaluate(
 		gpu_transforms: Optional GPU-side preprocessing transforms.
 
 	Returns:
-		Tuple of (test_accuracy, confusion_matrix, training_duration_seconds, trained_model).
+		Tuple of (test_accuracy, confusion_matrix, training_duration_seconds,
+		trained_model, sample_predictions).
 	"""
 	if criterion is None:
 		criterion = _DEFAULT_CRITERION()
@@ -111,7 +113,7 @@ def evaluate(
 	if verbose:
 		logger.info("Total training duration: %.1f minutes", training_duration / 60)
 
-	test_accuracy, confusion_matrix = compute_test_metrics(
+	test_accuracy, confusion_matrix, samples = compute_test_metrics_with_samples(
 		model,
 		test_loader,
 		device,
@@ -122,7 +124,7 @@ def evaluate(
 	if verbose:
 		logger.info("Test Accuracy: %.1f%%", test_accuracy * 100)
 
-	return test_accuracy, confusion_matrix, training_duration, model
+	return test_accuracy, confusion_matrix, training_duration, model, samples
 
 
 def evaluate_model(
@@ -135,7 +137,7 @@ def evaluate_model(
 	optimizer_class: type[optim.Optimizer] = optim.Adam,
 	verbose: bool = True,
 	gpu_transforms: list[nn.Module] | None = None,
-) -> tuple[float, ConfusionMatrix, float, BinaryCNN]:
+) -> tuple[float, ConfusionMatrix, float, BinaryCNN, list[dict]]:
 	"""Create a fresh model and run full training + evaluation.
 
 	Args:
@@ -150,7 +152,8 @@ def evaluate_model(
 		gpu_transforms: Optional GPU-side preprocessing transforms.
 
 	Returns:
-		Tuple of (test_accuracy, confusion_matrix, training_time_seconds, trained_model).
+		Tuple of (test_accuracy, confusion_matrix, training_time_seconds,
+		trained_model, sample_predictions).
 	"""
 	if criterion is None:
 		criterion = _DEFAULT_CRITERION()
@@ -163,7 +166,7 @@ def evaluate_model(
 
 	optimizer = optimizer_class(model.parameters(), lr=training_config.learning_rate)
 
-	test_accuracy, confusion_matrix, training_time, model = evaluate(
+	test_accuracy, confusion_matrix, training_time, model, samples = evaluate(
 		model=model,
 		criterion=criterion,
 		device=device,
@@ -176,7 +179,7 @@ def evaluate_model(
 		gpu_transforms=gpu_transforms,
 	)
 
-	return test_accuracy, confusion_matrix, training_time, model
+	return test_accuracy, confusion_matrix, training_time, model, samples
 
 
 def combo_key(transforms: tuple[nn.Module, ...]) -> str:
@@ -200,7 +203,6 @@ class CombinationResult:
 	accuracy: float
 	confusion_matrix: ConfusionMatrix
 	training_time: float
-	model: nn.Module
 	confidence_level: str = ""
 	gradcam_results: list[dict] = field(default_factory=list)
 
@@ -293,7 +295,7 @@ def run_combinations(
 			key,
 		)
 
-		accuracy, confusion_matrix, training_time, model = evaluate_model(
+		accuracy, confusion_matrix, training_time, model, samples = evaluate_model(
 			device=device,
 			train_loader=train_loader,
 			test_loader=test_loader,
@@ -305,12 +307,7 @@ def run_combinations(
 
 		gradcam_results: list[dict] = []
 		if run_gradcam:
-			reference_images = select_reference_images(
-				model=model,
-				test_loader=test_loader,
-				gpu_transforms=gpu_transforms,
-				device=device,
-			)
+			reference_images = select_reference_images(samples)
 			gradcam_results = run_gradcam_analysis(
 				model=model,
 				reference_images=reference_images,
@@ -324,10 +321,12 @@ def run_combinations(
 			accuracy=accuracy,
 			confusion_matrix=confusion_matrix,
 			training_time=training_time,
-			model=model,
 			confidence_level=preprocess_config.confidence_level,
 			gradcam_results=gradcam_results,
 		)
+
+		del model
+		torch.cuda.empty_cache()
 
 	return results
 

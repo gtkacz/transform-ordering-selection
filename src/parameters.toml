@@ -2,7 +2,6 @@
 healthy_skin_path = './dataset/healthy/'
 diseased_skin_path = './dataset/diseased/'
 training_dataset_ratio = 0.8
-precision_threshold = 0.8
 num_epochs = 3
 num_workers = 12
 batch_size = 128
