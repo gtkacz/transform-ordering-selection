@@ -3,21 +3,12 @@
  version = "0.1.0"
  description = "TCC project"
  readme = "README.md"
- requires-python = ">=3.12,<3.14"
+ requires-python = ">3.12,<3.14"
  dependencies = [
-     "scikit-image",
      "matplotlib",
-     "jupyter",
-     "opencv-python",
-     "loguru",
      "datasets",
-     "pynimbar",
-     "scikit-learn",
-     "seaborn",
      "pandas",
-     "pyperclip",
      "tabulate",
-     "opencv-python>=4.10.0.84",
      "torch",
      "torchvision",
      "kornia>=0.7.0",
@@ -29,13 +20,14 @@
  # Use the standard `project.dependencies` as the source of truth.
 
  [[tool.uv.index]]
- name = "pytorch-cu130"
- url = "https://download.pytorch.org/whl/cu130"
+ name = "pytorch-cu128"
+ url = "https://download.pytorch.org/whl/cu128"
  explicit = true
 
  [tool.uv.sources]
- torch = { index = "pytorch-cu130" }
- torchvision = { index = "pytorch-cu130" }
+ torch = { index = "pytorch-cu128" }
+ torchvision = { index = "pytorch-cu128" }
+ triton = { index = "pytorch-cu128" }
 
  [tool.ruff]
  exclude = [
@@ -126,27 +118,6 @@
 
  [tool.ruff.lint.per-file-ignores]
  "**/__init__.py" = ["F401"]
- "manage.py" = ["PLC0415", "DOC501", "ANN201"]
- "**/{tests,docs,tools}/*" = [
-     "D102",
-     "ANN201",
-     "PT009",
-     "DTZ001",
-     "PT027",
-     "D101",
-     "D100",
-     "CPY001",
-     "C409",
-     "C405",
-     "C409",
-     "BLE001",
-     "S311",
-     "S301",
-     "S403",
-     "D104",
- ]
- "shieldsio_plus/scripts/*" = ["D103"]
- "shieldsio_plus/common/enums/better_enum.py" = ["N805"]
 
  [tool.ruff.lint.flake8-quotes]
  inline-quotes = "double"
