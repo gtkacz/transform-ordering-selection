@@ -1,4 +1,4 @@
-# Transform Ordering Dominates Selection in Image Preprocessing Pipelines for Skin Disease Classification
+# Quantitative Analysis of the Impact of Transform Ordering and Selection in Image Preprocessing for Skin Disease Classification using Convolutional Neural Networks
 
 **Gabriel Mitelman Tkacz**, *Member, IEEE*, and **Gustavo Scalabrini Sampaio**
 
