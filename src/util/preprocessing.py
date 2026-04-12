@@ -120,6 +120,10 @@ class ColorSpaceTransform(nn.Module):
 		if needs_batch:
 			img = img.unsqueeze(0)
 
+		# Clamp to [0, 1] — kornia color conversions expect this range;
+		# upstream transforms (e.g. normalization) may shift values outside it.
+		img = img.clamp(0.0, 1.0)
+
 		converted = self._convert(img)
 
 		if needs_batch:
@@ -142,8 +146,11 @@ class EqualizationTransform(nn.Module):
 		if needs_batch:
 			img = img.unsqueeze(0)
 
+		# Clamp to [0, 1] — upstream transforms (e.g. normalization) may shift
+		# values outside the range that equalization and YUV conversion require.
+		img = img.clamp(0.0, 1.0)
+
 		if img.shape[-3] == 3:
-			# Convert to YUV, equalize Y channel, convert back
 			yuv = kornia.color.rgb_to_yuv(img)
 			y_eq = kornia.enhance.equalize(yuv[:, 0:1, :, :])
 			yuv = torch.cat([y_eq, yuv[:, 1:, :, :]], dim=1)

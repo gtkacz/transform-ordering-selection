@@ -128,7 +128,7 @@ def compute_test_metrics_with_samples(
 
 
 def compute_alpha(accuracy: float, base_accuracy: float) -> float:
-	"""Compute α = accuracy - base_accuracy (absolute accuracy gain).
+	"""Compute absolute accuracy gain.
 
 	Args:
 		accuracy: Model accuracy with preprocessing.
@@ -141,7 +141,7 @@ def compute_alpha(accuracy: float, base_accuracy: float) -> float:
 
 
 def compute_gamma(training_time: float, base_training_time: float) -> float:
-	"""Compute γ = training_time / base_training_time (time ratio).
+	"""Compute time ratio.
 
 	Args:
 		training_time: Training time with preprocessing (seconds).
@@ -157,21 +157,17 @@ def compute_gamma(training_time: float, base_training_time: float) -> float:
 
 
 def compute_weighted_alpha(alpha: float, gamma: float) -> float:
-	"""Compute wα = α / γ (accuracy gain per unit of training cost).
+	"""Compute accuracy gain per unit of training cost.
 
 	Args:
 		alpha: Absolute accuracy gain (α).
 		gamma: Training time ratio (γ).
 
 	Returns:
-		The weighted alpha metric.  When ``gamma`` is zero the ratio is
-		undefined; returns ``float("inf")`` for positive α, ``float("-inf")``
-		for negative α, and ``0.0`` when α is also zero.
+		The weighted alpha metric. When alpha >= 0, returns alpha/gamma.
+		When alpha < 0, returns alpha*gamma.
 	"""
-	if not gamma:
-		if alpha > 0:
-			return float("inf")
-		if alpha < 0:
-			return float("-inf")
-		return 0.0
-	return alpha / gamma
+	if alpha >= 0:
+		return alpha / gamma
+
+	return alpha * gamma
