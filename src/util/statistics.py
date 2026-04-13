@@ -180,7 +180,7 @@ def permutation_test(
 		np.sqrt(
 			((len(group_a) - 1) * np.var(group_a, ddof=1) + (len(group_b) - 1) * np.var(group_b, ddof=1))
 			/ (len(group_a) + len(group_b) - 2),
-		)
+		),
 	)
 	cohens_d = observed_diff / pooled_std if pooled_std > 0 else float("inf")
 
@@ -267,7 +267,7 @@ def holm_bonferroni(
 				raw_p=raw_p,
 				corrected_p=corrected_p,
 				significant=significant,
-			)
+			),
 		)
 
 	return results

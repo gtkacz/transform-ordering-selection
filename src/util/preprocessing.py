@@ -111,9 +111,7 @@ class ColorSpaceTransform(nn.Module):
 		self.source_space = source_space
 		self.target_space = target_space
 
-		if source_space == "RGB" and target_space == "BGR":
-			self._convert = lambda x: x.flip(-3)
-		elif source_space == "BGR" and target_space == "RGB":
+		if (source_space == "RGB" and target_space == "BGR") or (source_space == "BGR" and target_space == "RGB"):
 			self._convert = lambda x: x.flip(-3)
 		else:
 			key = (source_space, target_space)

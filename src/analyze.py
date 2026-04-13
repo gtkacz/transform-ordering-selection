@@ -60,7 +60,7 @@ def _load_seed_results(seed_dir: Path) -> list[dict]:
 	"""Load results_matrix.json for one seed.
 
 	Returns:
-	    List of result dicts from the matrix file.
+		List of result dicts from the matrix file.
 	"""
 	matrix_path = seed_dir / "results_matrix.json"
 	return json.loads(matrix_path.read_text())
@@ -73,7 +73,7 @@ def _group_by_pipeline(
 	"""Group entries across seeds by combo_key for a given confidence level.
 
 	Returns:
-	    Dict mapping combo_key to list of per-seed entries.
+		Dict mapping combo_key to list of per-seed entries.
 	"""
 	grouped: dict[str, list[dict]] = defaultdict(list)
 	for entries in all_seeds.values():
@@ -90,7 +90,7 @@ def aggregate_pipeline(
 	"""Compute aggregated statistics for one pipeline across seeds.
 
 	Returns:
-	    PipelineAggregate with mean, std, and CIs for all metrics.
+		PipelineAggregate with mean, std, and CIs for all metrics.
 	"""
 	alphas = np.array([e["alpha"] for e in entries])
 	gammas = np.array([e["gamma"] for e in entries])
@@ -134,7 +134,7 @@ def _pipeline_set_key(transforms: tuple[str, ...]) -> frozenset[str]:
 	"""Unordered set key for grouping pipelines by transform selection.
 
 	Returns:
-	    Frozenset of transform names.
+		Frozenset of transform names.
 	"""
 	return frozenset(transforms)
 
@@ -148,7 +148,7 @@ def run_variance_decomposition(
 	α variance into between-set (selection) and within-set (ordering).
 
 	Returns:
-	    Dict mapping pipeline length to ANOVA results.
+		Dict mapping pipeline length to ANOVA results.
 	"""
 	by_length: dict[int, list[PipelineAggregate]] = defaultdict(list)
 	for agg in aggregates:
@@ -191,7 +191,7 @@ def run_length_degradation_test(
 	"""Permutation test on correlation between pipeline length and mean α.
 
 	Returns:
-	    Dict with correlation test results and positive-proportion breakdown.
+		Dict with correlation test results and positive-proportion breakdown.
 	"""
 	non_baseline = [a for a in aggregates if a.pipeline_length > 0]
 
@@ -222,7 +222,7 @@ def run_positional_analysis(
 	"""Compute mean α by position for each transform and test E-first significance.
 
 	Returns:
-	    Dict with positional means, E-first test, and bookend test results.
+		Dict with positional means, E-first test, and bookend test results.
 	"""
 	non_baseline = [a for a in aggregates if a.pipeline_length > 0]
 
@@ -287,7 +287,7 @@ def run_error_decomposition(
 	"""Classify pipelines by error shift pattern using aggregated confusion matrices.
 
 	Returns:
-	    Dict with FP/FN correlation, category counts, and category fractions.
+		Dict with FP/FN correlation, category counts, and category fractions.
 	"""
 	baseline = next((a for a in aggregates if a.pipeline_length == 0), None)
 	if baseline is None:
@@ -346,7 +346,7 @@ def apply_multiple_testing_correction(
 	"""Collect all p-values from the analysis and apply Holm-Bonferroni.
 
 	Returns:
-	    List of corrected p-value dicts with significance flags.
+		List of corrected p-value dicts with significance flags.
 	"""
 	p_values: list[tuple[str, float]] = []
 
@@ -378,6 +378,7 @@ def main() -> None:
 	)
 
 	manifest_path = OUTPUT_DIR / "seed_manifest.json"
+
 	if not manifest_path.exists():
 		logger.error("No seed_manifest.json found. Run main.py first.")
 		return
@@ -388,6 +389,7 @@ def main() -> None:
 	logger.info("Loading results for %d seeds: %s", len(seeds), seeds)
 
 	all_seeds: dict[int, list[dict]] = {}
+
 	for seed in seeds:
 		seed_dir = Path(manifest["seed_dirs"][str(seed)])
 		all_seeds[seed] = _load_seed_results(seed_dir)
