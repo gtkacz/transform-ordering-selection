@@ -1,0 +1,4 @@
+draft/
+hypotheses/
+*.txt
+!final/*
