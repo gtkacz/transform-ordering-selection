@@ -103,6 +103,7 @@
      "RUF001",
      "RUF002",
      "ARG001",
+     "ERA001"
  ]
  extend-select = ["DOC"]
  fixable = ["ALL"]
