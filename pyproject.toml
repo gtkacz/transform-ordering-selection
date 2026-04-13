@@ -14,7 +14,8 @@
      "kornia>=0.7.0",
      "ipykernel",
      "grad-cam",
- ]
+     "numpyencoder>=0.3.2",
+]
 
  [tool.uv]
  # Use the standard `project.dependencies` as the source of truth.

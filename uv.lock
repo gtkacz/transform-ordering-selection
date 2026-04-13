@@ -1118,6 +1118,19 @@ wheels = [
 ]
 
 [[package]]
+name = "numpyencoder"
+version = "0.3.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c4/0d/266647b8986a9d5ff10bdf50b5d77c90c03038f56132d34d51a59f1bbe56/numpyencoder-0.3.2.tar.gz", hash = "sha256:3107f51b2d90a053fea5e4075b024080c07bfabff0050e070ba8e90241734f16", size = 3284, upload-time = "2025-07-15T04:12:29.329Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/82/ee/372a5080e5185bb7ec685040c33be3845418341cb0764c7033f1e1cf02c6/numpyencoder-0.3.2-py3-none-any.whl", hash = "sha256:a5935afdbbc237c1b6c23b5c7bc0e77645a0bbd9ed5bbb1eb8449da75909699f", size = 3526, upload-time = "2025-07-15T04:12:28.552Z" },
+]
+
+[[package]]
 name = "nvidia-cublas-cu12"
 version = "12.8.4.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1811,6 +1824,7 @@ dependencies = [
     { name = "ipykernel" },
     { name = "kornia" },
     { name = "matplotlib" },
+    { name = "numpyencoder" },
     { name = "pandas" },
     { name = "tabulate" },
     { name = "torch" },
@@ -1824,6 +1838,7 @@ requires-dist = [
     { name = "ipykernel" },
     { name = "kornia", specifier = ">=0.7.0" },
     { name = "matplotlib" },
+    { name = "numpyencoder", specifier = ">=0.3.2" },
     { name = "pandas" },
     { name = "tabulate" },
     { name = "torch", index = "https://download.pytorch.org/whl/cu128" },

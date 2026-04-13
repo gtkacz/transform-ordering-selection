@@ -1,4 +1,4 @@
-# Quantitative Analysis of the Impact of Transform Ordering and Selection in Image Preprocessing for Skin Disease Classification using Convolutional Neural Networks
+# Significance of Transform Ordering and Selection in Image Preprocessing for CNN-Based Skin Disease Classification
 
 **Gabriel Mitelman Tkacz**, *Member, IEEE*, and **Gustavo Scalabrini Sampaio**
 

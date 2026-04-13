@@ -16,6 +16,7 @@ from itertools import starmap
 from pathlib import Path
 
 import numpy as np
+from numpyencoder import NumpyEncoder
 
 from util.statistics import (
 	bootstrap_ci,
@@ -434,7 +435,7 @@ def main() -> None:
 		}
 
 	analysis_path = OUTPUT_DIR / "analysis.json"
-	analysis_path.write_text(json.dumps(full_analysis, indent=2))
+	analysis_path.write_text(json.dumps(full_analysis, indent=2, cls=NumpyEncoder))
 	logger.info("Full analysis written to %s", analysis_path)
 
 

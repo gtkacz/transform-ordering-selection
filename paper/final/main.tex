@@ -18,12 +18,12 @@
 \usepackage{hyperref}
 
 \hypersetup{
-    pdftitle={Quantitative Analysis of the Impact of Transform Ordering and Selection in Image Preprocessing for Skin Disease Classification using Convolutional Neural Networks},
-    pdfauthor={Gabriel Mitelman Tkacz and Gustavo Scalabrini Sampaio},
-    colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue,
+  pdftitle={Significance of Transform Ordering and Selection in Image Preprocessing for CNN-Based Skin Disease Classification},
+  pdfauthor={Gabriel Mitelman Tkacz and Gustavo Scalabrini Sampaio},
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue,
 }
 
 \hyphenation{op-tical net-works semi-conduc-tor pre-proc-ess-ing der-ma-to-log-i-cal}
@@ -34,14 +34,14 @@
 % ===================================================================
 % TITLE AND AUTHORS
 % ===================================================================
-\title{Quantitative Analysis of the Impact of Transform Ordering and Selection in Image Preprocessing for Skin Disease Classification using Convolutional Neural Networks}
+\title{Significance of Transform Ordering and Selection in Image Preprocessing for CNN-Based Skin Disease Classification}
 
 \author{Gabriel Mitelman Tkacz\orcidlink{0009-0004-3619-4561},~\IEEEmembership{Member,~IEEE,}
-        and Gustavo Scalabrini Sampaio\orcidlink{0000-0003-1150-5584}%
+    and Gustavo Scalabrini Sampaio\orcidlink{0000-0003-1150-5584}%
 \thanks{This work received funding from the Brazilian Federal Agency for Support and Evaluation of Graduate Education (CAPES Foundation).}%
 \thanks{G.~M.~Tkacz and G.~S.~Sampaio are with the School of Computer Science and Informatics, Mackenzie Presbyterian University, S\~ao Paulo, SP, Brazil (e-mail: gabriel.tkacz@ieee.org; gustavo.sampaio@mackenzie.br).}}
 
-\markboth{IEEE Transactions on Image Processing}%
+\markboth{Journal of \LaTeX\ class files}%
 {Tkacz and Sampaio: Transform Ordering Dominates Selection in Image Preprocessing Pipelines}
 
 \maketitle
@@ -103,14 +103,14 @@ The experimental dataset was constructed by combining dermoscopic images of skin
 
 The classification architecture consisted of a four-block convolutional neural network (CNN). Each block comprised a convolutional layer, batch normalization~\cite{IoffeSzegedy2015}, ReLU activation~\cite{ramachandran2017searchingactivationfunctions}, and max pooling. Filter counts doubled at each block, 32, 64, 128, and 256, followed by fully connected layers reducing dimensionality to a single output node with sigmoid activation for binary classification.
 
-The dataset was partitioned into training (80\%), validation (10\%), and test (10\%) subsets using a fixed random seed to ensure identical splits across all 65 experimental configurations. Training used the Adam optimizer~\cite{KingmaBa2015} with a learning rate of $10^{-4}$ and mean squared error (MSE) as the loss function. All experiments were executed on a system equipped with an AMD Ryzen 9 9950X3D processor, 96\,GB of DDR5 RAM, and an NVIDIA GeForce RTX 4080 SUPER GPU running CUDA~13.2.
+The dataset was partitioned into training (80\%), validation (10\%), and test (10\%) subsets using a fixed random seed to ensure identical splits across all 65 experimental configurations. Training used the Adam optimizer~\cite{KingmaBa2015} with a learning rate of $10^{-4}$ and mean squared error (MSE) as the loss function. All experiments were executed on a system equipped with an AMD Ryzen 9 9950X3D processor, 96\,GB of DDR5 RAM, and an NVIDIA GeForce RTX 4080 SUPER GPU running CUDA~12.8.
 
 % --- B. Preprocessing Transforms ---
 \subsection{Preprocessing Transforms}
 
 Four fundamental image transforms were selected for evaluation, spanning the principal categories of preprocessing commonly employed in medical imaging pipelines~\cite{Brinker2019, RODRIGUES2020103542, Tarawneh2024, computers8030062}: intensity standardization, contrast enhancement, noise suppression, and color representation.
 
-\textbf{Intensity Normalization (N)} applies an affine transformation $x' = \frac{x - \mu}{\sigma}$ to rescale pixel values toward a target mean $\mu_t$ and standard deviation $\sigma_t$. This standardization reduces inter-sample variability in lighting and contrast, allowing the network optimizer to converge more efficiently~\cite{irjet}.
+\textbf{Intensity Normalization (N)} applies an affine transformation $x' = \frac{x - \mu}{\sigma}$ to rescale pixel values toward a target mean $\mu_t$ and standard deviation $\sigma_t$. This standardization reduces inter-sample variability in lighting and contrast, allowing the network optimizer to converge more efficiently~\cite{10.5555/1076432}.
 
 \textbf{Histogram Equalization (E)} redistributes pixel intensities to approximate a uniform cumulative distribution function~\cite{10.5555/1076432, 9025640, 10810559}. By expanding the dynamic range, equalization enhances subtle textural and chromatic contrasts that may be diagnostically relevant in skin lesion assessment.
 
@@ -128,9 +128,9 @@ Preprocessing parameters were determined through systematic grid search optimiza
 \textbf{Transform} & \textbf{Parameters} \\
 \midrule
 Normalization (N) & Mean: 0.4, Std.\ dev.: 0.2 \\
-Equalization (E)  & Standard histogram equalization \\
-Denoising (D)     & Template window: 5\,px, Search: 19\,px \\
-Color Space (CS)  & RGB $\to$ HSV \\
+Equalization (E) & Standard histogram equalization \\
+Denoising (D)  & Template window: 5\,px, Search: 19\,px \\
+Color Space (CS) & RGB $\to$ HSV \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -194,7 +194,7 @@ Four statistical techniques are employed to characterize the structure of the pi
 % --- A. Pipeline Performance Overview ---
 \subsection{Pipeline Performance Overview}
 
-Table~\ref{tab:results} presents the accuracy gain ($\alpha$) and cost-adjusted accuracy gain ($\alpha_w$) for all 65 pipeline configurations. The distribution of outcomes across the 64 non-baseline pipelines is strikingly asymmetric: approximately 23\% of pipelines achieve positive $\alpha$ (accuracy improvement over the unprocessed baseline), while the remaining 77\% degrade performance.
+Table~\ref{tab:results} presents the accuracy gain ($\alpha$) and cost-adjusted accuracy gain ($\alpha_w$) for all 65 pipeline configurations. The distribution of outcomes across the 64 non-baseline pipelines is strikingly asymmetric: 15 of 64 (23.4\%) of pipelines achieve positive $\alpha$ (accuracy improvement over the unprocessed baseline), while the remaining 77\% degrade performance.
 
 The best-performing pipeline is CS$\to$E$\to$N, achieving $\alpha = +1.57$\,pp with $\alpha_w = 1.86$. Two other length-three configurations, E$\to$N$\to$D ($\alpha = +1.16$\,pp) and D$\to$E$\to$N / E$\to$D$\to$N (tied at $\alpha = +0.99$\,pp), constitute the remaining top performers, all sharing the common feature of placing equalization before normalization. The worst-performing pipeline is E$\to$D$\to$N$\to$CS at $\alpha = -5.30$\,pp ($\alpha_w = -5.95$), followed by N$\to$D$\to$CS$\to$E at $\alpha = -3.07$\,pp.
 
@@ -213,46 +213,46 @@ A striking pattern emerges among the worst-performing pipelines: the five most d
 \textbf{Pipeline} & \boldmath$\alpha$\textbf{\,(pp)} & \boldmath$\alpha_w$ \\
 \midrule
 % --- Length 1 (left) & Length 2 (right) ---
-CS                              & $-0.33$  & $-0.26$   & CS$\to$D                        & $-1.57$  & $-1.28$  \\
-D                               & $+0.66$  & $0.82$    & CS$\to$E                        & $+0.25$  & $0.30$   \\
-E                               & $+0.83$  & $1.00$    & CS$\to$N                        & $-2.49$  & $-1.90$  \\
-N                               & $+0.08$  & $0.11$    & D$\to$CS                        & $-1.74$  & $-1.42$  \\
-                                &          &           & D$\to$E                         & $+0.58$  & $0.53$   \\
-                                &          &           & D$\to$N                         & $-0.33$  & $-0.27$  \\
-                                &          &           & E$\to$CS                        & $+0.50$  & $0.59$   \\
-                                &          &           & E$\to$D                         & $+0.83$  & $0.75$   \\
-                                &          &           & E$\to$N                         & $+0.58$  & $0.70$   \\
-                                &          &           & N$\to$CS                        & $-1.99$  & $-1.53$  \\
-                                &          &           & N$\to$D                         & $-0.17$  & $-0.14$  \\
-                                &          &           & N$\to$E                         & $-1.33$  & $-1.14$  \\
+CS                & $-0.33$ & $-0.26$ & CS$\to$D             & $-1.57$ & $-1.28$ \\
+D                & $+0.66$ & $0.82$  & CS$\to$E             & $+0.25$ & $0.30$ \\
+E                & $+0.83$ & $1.00$  & CS$\to$N             & $-2.49$ & $-1.90$ \\
+N                & $+0.08$ & $0.11$  & D$\to$CS             & $-1.74$ & $-1.42$ \\
+                &     &     & D$\to$E             & $+0.58$ & $0.53$ \\
+                &     &     & D$\to$N             & $-0.33$ & $-0.27$ \\
+                &     &     & E$\to$CS             & $+0.50$ & $0.59$ \\
+                &     &     & E$\to$D             & $+0.83$ & $0.75$ \\
+                &     &     & E$\to$N             & $+0.58$ & $0.70$ \\
+                &     &     & N$\to$CS             & $-1.99$ & $-1.53$ \\
+                &     &     & N$\to$D             & $-0.17$ & $-0.14$ \\
+                &     &     & N$\to$E             & $-1.33$ & $-1.14$ \\
 \midrule
 % --- Length 3 ---
-CS$\to$D$\to$E                  & $-1.74$  & $-1.95$   & E$\to$CS$\to$D                  & $+0.08$  & $0.07$   \\
-CS$\to$D$\to$N                  & $-1.74$  & $-1.41$   & E$\to$CS$\to$N                  & $-2.40$  & $-2.06$  \\
-CS$\to$E$\to$D                  & $-2.73$  & $-3.06$   & E$\to$D$\to$CS                  & $-0.91$  & $-1.02$  \\
-CS$\to$E$\to$N                  & $+1.57$  & $1.86$    & E$\to$D$\to$N                   & $+0.99$  & $0.89$   \\
-CS$\to$N$\to$D                  & $-1.74$  & $-1.42$   & E$\to$N$\to$CS                  & $-0.41$  & $-0.35$  \\
-CS$\to$N$\to$E                  & $-1.16$  & $-1.02$   & E$\to$N$\to$D                   & $+1.16$  & $1.05$   \\
-D$\to$CS$\to$E                  & $-0.91$  & $-1.02$   & N$\to$CS$\to$D                  & $-0.99$  & $-0.82$  \\
-D$\to$CS$\to$N                  & $-1.99$  & $-1.63$   & N$\to$CS$\to$E                  & $-2.40$  & $-2.08$  \\
-D$\to$E$\to$CS                  & $-2.32$  & $-2.60$   & N$\to$D$\to$CS                  & $-1.33$  & $-1.08$  \\
-D$\to$E$\to$N                   & $+0.99$  & $0.90$    & N$\to$D$\to$E                   & $-1.08$  & $-1.21$  \\
-D$\to$N$\to$CS                  & $-2.49$  & $-2.03$   & N$\to$E$\to$CS                  & $-2.65$  & $-2.28$  \\
-D$\to$N$\to$E                   & $-1.74$  & $-1.96$   & N$\to$E$\to$D                   & $-1.24$  & $-1.40$  \\
+CS$\to$D$\to$E          & $-1.74$ & $-1.95$ & E$\to$CS$\to$D          & $+0.08$ & $0.07$ \\
+CS$\to$D$\to$N          & $-1.74$ & $-1.41$ & E$\to$CS$\to$N          & $-2.40$ & $-2.06$ \\
+CS$\to$E$\to$D          & $-2.73$ & $-3.06$ & E$\to$D$\to$CS          & $-0.91$ & $-1.02$ \\
+CS$\to$E$\to$N          & $+1.57$ & $1.86$  & E$\to$D$\to$N          & $+0.99$ & $0.89$ \\
+CS$\to$N$\to$D          & $-1.74$ & $-1.42$ & E$\to$N$\to$CS          & $-0.41$ & $-0.35$ \\
+CS$\to$N$\to$E          & $-1.16$ & $-1.02$ & E$\to$N$\to$D          & $+1.16$ & $1.05$ \\
+D$\to$CS$\to$E          & $-0.91$ & $-1.02$ & N$\to$CS$\to$D          & $-0.99$ & $-0.82$ \\
+D$\to$CS$\to$N          & $-1.99$ & $-1.63$ & N$\to$CS$\to$E          & $-2.40$ & $-2.08$ \\
+D$\to$E$\to$CS          & $-2.32$ & $-2.60$ & N$\to$D$\to$CS          & $-1.33$ & $-1.08$ \\
+D$\to$E$\to$N          & $+0.99$ & $0.90$  & N$\to$D$\to$E          & $-1.08$ & $-1.21$ \\
+D$\to$N$\to$CS          & $-2.49$ & $-2.03$ & N$\to$E$\to$CS          & $-2.65$ & $-2.28$ \\
+D$\to$N$\to$E          & $-1.74$ & $-1.96$ & N$\to$E$\to$D          & $-1.24$ & $-1.40$ \\
 \midrule
 % --- Length 4 ---
-CS$\to$D$\to$E$\to$N            & $-1.33$  & $-1.49$   & E$\to$CS$\to$D$\to$N            & $+0.50$  & $0.44$   \\
-CS$\to$D$\to$N$\to$E            & $-1.66$  & $-1.90$   & E$\to$CS$\to$N$\to$D            & $+0.17$  & $0.15$   \\
-CS$\to$E$\to$D$\to$N            & $-0.91$  & $-1.03$   & E$\to$D$\to$CS$\to$N            & $-0.41$  & $-0.46$  \\
-CS$\to$E$\to$N$\to$D            & $-0.91$  & $-1.01$   & E$\to$D$\to$N$\to$CS            & $-5.30$  & $-5.95$  \\
-CS$\to$N$\to$D$\to$E            & $-2.15$  & $-2.47$   & E$\to$N$\to$CS$\to$D            & $-2.24$  & $-2.51$  \\
-CS$\to$N$\to$E$\to$D            & $-2.24$  & $-2.55$   & E$\to$N$\to$D$\to$CS            & $-2.32$  & $-2.61$  \\
-D$\to$CS$\to$E$\to$N            & $-1.08$  & $-1.21$   & N$\to$CS$\to$D$\to$E            & $-2.24$  & $-2.53$  \\
-D$\to$CS$\to$N$\to$E            & $-2.90$  & $-3.32$   & N$\to$CS$\to$E$\to$D            & $-2.07$  & $-2.36$  \\
-D$\to$E$\to$CS$\to$N            & $-0.58$  & $-0.65$   & N$\to$D$\to$CS$\to$E            & $-3.07$  & $-3.49$  \\
-D$\to$E$\to$N$\to$CS            & $-0.41$  & $-0.46$   & N$\to$D$\to$E$\to$CS            & $-2.24$  & $-2.54$  \\
-D$\to$N$\to$CS$\to$E            & $-1.41$  & $-1.61$   & N$\to$E$\to$CS$\to$D            & $-0.99$  & $-1.14$  \\
-D$\to$N$\to$E$\to$CS            & $-2.49$  & $-2.83$   & N$\to$E$\to$D$\to$CS            & $-1.99$  & $-2.27$  \\
+CS$\to$D$\to$E$\to$N       & $-1.33$ & $-1.49$ & E$\to$CS$\to$D$\to$N       & $+0.50$ & $0.44$ \\
+CS$\to$D$\to$N$\to$E       & $-1.66$ & $-1.90$ & E$\to$CS$\to$N$\to$D       & $+0.17$ & $0.15$ \\
+CS$\to$E$\to$D$\to$N       & $-0.91$ & $-1.03$ & E$\to$D$\to$CS$\to$N       & $-0.41$ & $-0.46$ \\
+CS$\to$E$\to$N$\to$D       & $-0.91$ & $-1.01$ & E$\to$D$\to$N$\to$CS       & $-5.30$ & $-5.95$ \\
+CS$\to$N$\to$D$\to$E       & $-2.15$ & $-2.47$ & E$\to$N$\to$CS$\to$D       & $-2.24$ & $-2.51$ \\
+CS$\to$N$\to$E$\to$D       & $-2.24$ & $-2.55$ & E$\to$N$\to$D$\to$CS       & $-2.32$ & $-2.61$ \\
+D$\to$CS$\to$E$\to$N       & $-1.08$ & $-1.21$ & N$\to$CS$\to$D$\to$E       & $-2.24$ & $-2.53$ \\
+D$\to$CS$\to$N$\to$E       & $-2.90$ & $-3.32$ & N$\to$CS$\to$E$\to$D       & $-2.07$ & $-2.36$ \\
+D$\to$E$\to$CS$\to$N       & $-0.58$ & $-0.65$ & N$\to$D$\to$CS$\to$E       & $-3.07$ & $-3.49$ \\
+D$\to$E$\to$N$\to$CS       & $-0.41$ & $-0.46$ & N$\to$D$\to$E$\to$CS       & $-2.24$ & $-2.54$ \\
+D$\to$N$\to$CS$\to$E       & $-1.41$ & $-1.61$ & N$\to$E$\to$CS$\to$D       & $-0.99$ & $-1.14$ \\
+D$\to$N$\to$E$\to$CS       & $-2.49$ & $-2.83$ & N$\to$E$\to$D$\to$CS       & $-1.99$ & $-2.27$ \\
 \bottomrule
 \end{tabular*}
 \end{table*}
