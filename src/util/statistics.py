@@ -271,3 +271,82 @@ def holm_bonferroni(
 		)
 
 	return results
+
+
+def benjamini_hochberg(
+	tests: list[tuple[str, float]],
+	alpha: float = 0.05,
+) -> list[CorrectedPValue]:
+	"""Apply Benjamini-Hochberg FDR correction to a family of p-values.
+
+	Controls the false discovery rate (expected proportion of false positives
+	among discoveries) at level alpha. Less conservative than Holm-Bonferroni,
+	appropriate for large families where FWER control is excessive.
+
+	Args:
+	    tests: List of (test_name, raw_p_value) tuples.
+	    alpha: Desired FDR level.
+
+	Returns:
+	    List of CorrectedPValue with BH-adjusted q-values, sorted by raw p.
+	"""
+	sorted_tests = sorted(tests, key=operator.itemgetter(1))
+	n = len(sorted_tests)
+
+	raw_qs: list[float] = [
+		min(raw_p * n / (i + 1), 1.0) for i, (_, raw_p) in enumerate(sorted_tests)
+	]
+
+	# Enforce monotonicity: step-up from largest to smallest
+	adjusted_qs: list[float] = [0.0] * n
+	running_min = 1.0
+	for i in range(n - 1, -1, -1):
+		running_min = min(running_min, raw_qs[i])
+		adjusted_qs[i] = running_min
+
+	return [
+		CorrectedPValue(
+			test_name=name,
+			raw_p=raw_p,
+			corrected_p=q,
+			significant=q <= alpha,
+		)
+		for (name, raw_p), q in zip(sorted_tests, adjusted_qs, strict=True)
+	]
+
+
+def bootstrap_p_value(
+	values: NDArray[np.floating],
+	null_value: float = 0.0,
+	n_bootstrap: int = 10_000,
+	rng: np.random.Generator | None = None,
+) -> float:
+	"""Two-sided bootstrap p-value for H0: mean == null_value.
+
+	Centers the sample at null_value, then resamples with replacement to
+	construct the null distribution of the mean. The p-value is the
+	fraction of null means at least as extreme as the observed mean.
+
+	Args:
+	    values: Observed values.
+	    null_value: Null hypothesis mean.
+	    n_bootstrap: Number of bootstrap resamples.
+	    rng: Optional random generator for reproducibility.
+
+	Returns:
+	    Two-sided p-value (Phipson & Smyth adjustment applied for stability).
+	"""
+	if rng is None:
+		rng = np.random.default_rng(42)
+
+	observed_mean = float(np.mean(values))
+	observed_deviation = abs(observed_mean - null_value)
+
+	centered = values - observed_mean + null_value
+	null_means = np.array([
+		rng.choice(centered, size=len(centered), replace=True).mean() for _ in range(n_bootstrap)
+	])
+
+	extreme = int(np.sum(np.abs(null_means - null_value) >= observed_deviation))
+	# Phipson-Smyth +1 smoothing avoids reporting p = 0
+	return float((extreme + 1) / (n_bootstrap + 1))

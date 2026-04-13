@@ -17,9 +17,12 @@ from pathlib import Path
 
 import numpy as np
 from numpyencoder import NumpyEncoder
+from scipy import stats
 
 from util.statistics import (
+	benjamini_hochberg,
 	bootstrap_ci,
+	bootstrap_p_value,
 	holm_bonferroni,
 	one_way_anova,
 	permutation_correlation_test,
@@ -341,6 +344,229 @@ def run_error_decomposition(
 	}
 
 
+def run_stratified_bookend_test(
+	grouped_entries: dict[str, list[dict]],
+) -> dict:
+	"""Bookend test (E-first-N-last vs N-first-E-last) within each length stratum.
+
+	Uses per-seed α values (not aggregated means) so that each length has
+	enough observations to test. L=2 has one pipeline per arm but 5 seeds
+	each (n=5 vs 5); L=3 and L=4 have 2 pipelines per arm (n=10 vs 10).
+	This disentangles the ordering effect from the length confound present
+	in the pooled bookend test.
+
+	Returns:
+		Dict keyed by pipeline length, each with permutation-test results
+		and descriptive statistics.
+	"""
+	results_by_length: dict[int, dict] = {}
+
+	for length in (2, 3, 4):
+		e_first_n_last: list[float] = []
+		n_first_e_last: list[float] = []
+
+		for entries in grouped_entries.values():
+			transforms = tuple(entries[0]["transforms"])
+			if len(transforms) != length:
+				continue
+
+			is_e_first_n_last = (
+				transforms[0] == "EqualizationTransform" and transforms[-1] == "NormalizeTransform"
+			)
+			is_n_first_e_last = (
+				transforms[0] == "NormalizeTransform" and transforms[-1] == "EqualizationTransform"
+			)
+
+			if is_e_first_n_last:
+				e_first_n_last.extend(float(e["alpha"]) for e in entries)
+			elif is_n_first_e_last:
+				n_first_e_last.extend(float(e["alpha"]) for e in entries)
+
+		if len(e_first_n_last) >= 2 and len(n_first_e_last) >= 2:
+			test = permutation_test(
+				np.array(e_first_n_last),
+				np.array(n_first_e_last),
+			)
+			results_by_length[length] = {
+				"test": asdict(test),
+				"n_e_first_n_last": len(e_first_n_last),
+				"n_n_first_e_last": len(n_first_e_last),
+				"mean_e_first_n_last": float(np.mean(e_first_n_last)),
+				"mean_n_first_e_last": float(np.mean(n_first_e_last)),
+				"std_e_first_n_last": (
+					float(np.std(e_first_n_last, ddof=1)) if len(e_first_n_last) > 1 else 0.0
+				),
+				"std_n_first_e_last": (
+					float(np.std(n_first_e_last, ddof=1)) if len(n_first_e_last) > 1 else 0.0
+				),
+			}
+		else:
+			results_by_length[length] = {
+				"note": f"Insufficient data: n={len(e_first_n_last)} vs {len(n_first_e_last)}",
+			}
+
+	return results_by_length
+
+
+def run_per_pipeline_fdr(
+	aggregates: list[PipelineAggregate],
+	grouped_entries: dict[str, list[dict]],
+) -> dict:
+	"""Bootstrap p-values for per-pipeline α with Benjamini-Hochberg FDR.
+
+	For each non-baseline pipeline, tests H0: α = 0 using bootstrap resampling
+	of per-seed α values, then controls false discovery rate across the 64
+	non-baseline pipelines at q = 0.05.
+
+	Returns:
+		Dict with per-pipeline q-values, counts of significant discoveries,
+		and sign breakdown.
+	"""
+	tests: list[tuple[str, float]] = []
+	raw_data: dict[str, dict] = {}
+
+	for agg in aggregates:
+		if agg.pipeline_length == 0:
+			continue
+
+		per_seed_alphas = np.array([e["alpha"] for e in grouped_entries[agg.combo_key]])
+		p_val = bootstrap_p_value(per_seed_alphas)
+		tests.append((agg.combo_key, p_val))
+		raw_data[agg.combo_key] = {
+			"mean_alpha": agg.mean_alpha,
+			"ci_lower": agg.ci_alpha_lower,
+			"ci_upper": agg.ci_alpha_upper,
+		}
+
+	fdr_corrected = benjamini_hochberg(tests, alpha=0.05)
+
+	n_significant = sum(1 for c in fdr_corrected if c.significant)
+	n_positive_significant = sum(
+		1 for c in fdr_corrected if c.significant and raw_data[c.test_name]["mean_alpha"] > 0
+	)
+	n_negative_significant = sum(
+		1 for c in fdr_corrected if c.significant and raw_data[c.test_name]["mean_alpha"] < 0
+	)
+
+	return {
+		"per_pipeline_tests": [asdict(c) for c in fdr_corrected],
+		"n_pipelines_tested": len(tests),
+		"n_significant_at_fdr_0p05": n_significant,
+		"n_positive_significant": n_positive_significant,
+		"n_negative_significant": n_negative_significant,
+	}
+
+
+def run_weighted_alpha_rank_analysis(
+	aggregates: list[PipelineAggregate],
+) -> dict:
+	"""Spearman ρ between αw (piecewise γ-weighted) and α/γ (uniform) rankings.
+
+	Assesses whether the piecewise weighting scheme used to compute αw
+	materially alters pipeline rankings relative to a simpler uniform α/γ
+	ratio. High ρ indicates the choice of weighting is not driving rankings.
+
+	Returns:
+		Dict with Spearman ρ, p-value, and top-10 overlap count.
+	"""
+	non_baseline = [a for a in aggregates if a.pipeline_length > 0]
+
+	w_alphas = np.array([a.mean_weighted_alpha for a in non_baseline])
+	simple_alpha_gamma = np.array([
+		a.mean_alpha / a.mean_gamma if a.mean_gamma > 0 else 0.0 for a in non_baseline
+	])
+
+	rho, p_value = stats.spearmanr(w_alphas, simple_alpha_gamma)
+
+	order_w = np.argsort(-w_alphas)[:10]
+	order_simple = np.argsort(-simple_alpha_gamma)[:10]
+	top10_overlap = len(set(order_w.tolist()) & set(order_simple.tolist()))
+
+	return {
+		"spearman_rho": float(rho),
+		"spearman_p": float(p_value),
+		"top10_overlap": int(top10_overlap),
+		"n_pipelines": len(non_baseline),
+	}
+
+
+def run_loso_sensitivity(
+	all_seeds: dict[int, list[dict]],
+	confidence_level: str,
+) -> dict:
+	"""Leave-one-seed-out sensitivity analysis on primary tests.
+
+	Re-runs variance decomposition, length-degradation, and positional
+	analysis with each seed excluded in turn, then applies Holm correction.
+	Reports effect size ranges and min/max corrected p-values across the
+	five LOSO runs. Critical for addressing grid-search leakage on seed 42.
+
+	Returns:
+		Dict with per-excluded-seed results, effect size ranges, and summary
+		of corrected significance across all LOSO iterations.
+	"""
+	seeds = sorted(all_seeds.keys())
+	loso_results: dict[int, dict] = {}
+
+	for excluded_seed in seeds:
+		subset_seeds = {s: all_seeds[s] for s in seeds if s != excluded_seed}
+
+		grouped = _group_by_pipeline(subset_seeds, confidence_level)
+		aggregates = list(starmap(aggregate_pipeline, grouped.items()))
+		aggregates.sort(key=lambda a: (a.pipeline_length, a.combo_key))
+
+		test_results = {
+			"variance_decomposition": run_variance_decomposition(aggregates),
+			"length_degradation": run_length_degradation_test(aggregates),
+			"positional_analysis": run_positional_analysis(aggregates),
+		}
+		corrected = apply_multiple_testing_correction(test_results)
+
+		bookend = test_results["positional_analysis"]["bookend_test"]
+		loso_results[excluded_seed] = {
+			"corrected_p_values": corrected,
+			"e_first_cohens_d": test_results["positional_analysis"]["e_first_test"]["cohens_d"],
+			"bookend_cohens_d": bookend["cohens_d"] if bookend else None,
+			"length_correlation_r": test_results["length_degradation"]["correlation"][
+				"observed_statistic"
+			],
+		}
+
+	all_names = {c["test_name"] for r in loso_results.values() for c in r["corrected_p_values"]}
+	summary: dict[str, dict] = {}
+	for name in all_names:
+		entries = [
+			c
+			for r in loso_results.values()
+			for c in r["corrected_p_values"]
+			if c["test_name"] == name
+		]
+		if entries:
+			ps = [c["corrected_p"] for c in entries]
+			summary[name] = {
+				"min_corrected_p": min(ps),
+				"max_corrected_p": max(ps),
+				"significant_in_all_runs": all(c["significant"] for c in entries),
+				"n_runs": len(entries),
+			}
+
+	e_first_ds = [r["e_first_cohens_d"] for r in loso_results.values()]
+	bookend_ds = [r["bookend_cohens_d"] for r in loso_results.values() if r["bookend_cohens_d"] is not None]
+	length_rs = [r["length_correlation_r"] for r in loso_results.values()]
+
+	return {
+		"per_excluded_seed": {str(k): v for k, v in loso_results.items()},
+		"summary": summary,
+		"effect_size_ranges": {
+			"e_first_cohens_d": {"min": float(min(e_first_ds)), "max": float(max(e_first_ds))},
+			"bookend_cohens_d": (
+				{"min": float(min(bookend_ds)), "max": float(max(bookend_ds))} if bookend_ds else None
+			),
+			"length_correlation_r": {"min": float(min(length_rs)), "max": float(max(length_rs))},
+		},
+	}
+
+
 def apply_multiple_testing_correction(
 	test_results: dict,
 ) -> list[dict]:
@@ -421,8 +647,20 @@ def main() -> None:
 		logger.info("Running error decomposition...")
 		test_results["error_decomposition"] = run_error_decomposition(aggregates)
 
+		logger.info("Running stratified bookend test (within-length)...")
+		test_results["stratified_bookend"] = run_stratified_bookend_test(grouped)
+
+		logger.info("Running per-pipeline BH-FDR on α...")
+		test_results["per_pipeline_fdr"] = run_per_pipeline_fdr(aggregates, grouped)
+
+		logger.info("Running αw rank-correlation analysis...")
+		test_results["weighted_alpha_rank"] = run_weighted_alpha_rank_analysis(aggregates)
+
 		logger.info("Applying multiple testing correction...")
 		test_results["corrected_p_values"] = apply_multiple_testing_correction(test_results)
+
+		logger.info("Running LOSO sensitivity analysis...")
+		test_results["loso_sensitivity"] = run_loso_sensitivity(all_seeds, conf_level)
 
 		full_analysis[conf_level] = {
 			"aggregated_pipelines": [asdict(a) for a in aggregates],
