@@ -1,4 +1,4 @@
-"""Grad-CAM heatmap generation for binary sigmoid-output CNN models."""
+"""Grad-CAM heatmap generation for binary logit-output CNN models."""
 
 from __future__ import annotations
 
@@ -12,11 +12,11 @@ from .preprocessing import apply_gpu_transforms
 
 
 class BinaryClassifierTarget:
-	"""Target for binary sigmoid-output models.
+	"""Target for binary logit-output models.
 
 	pytorch-grad-cam expects a callable that extracts a scalar from the model output.
-	For BinaryCNN (sigmoid output, shape [B, 1]), returns the squeezed value
-	for the positive class, or (1 - value) for the negative class.
+	For BinaryCNN (logit output, shape [B, 1]), returns the squeezed logit
+	for the positive class, or negated logit for the negative class.
 	"""
 
 	def __init__(self, category: int = 1) -> None:
@@ -31,14 +31,15 @@ class BinaryClassifierTarget:
 		"""Extract the target score from model output.
 
 		Args:
-			model_output: Raw model output tensor.
+			model_output: Raw logit tensor.
 
 		Returns:
 			Scalar score for the target category.
 		"""
+		logits = model_output.squeeze(-1)
 		if self.category == 1:
-			return model_output.squeeze(-1)
-		return 1.0 - model_output.squeeze(-1)
+			return logits
+		return -logits
 
 
 def create_gradcam(model: nn.Module, target_layer_name: str = "conv4") -> GradCAM:

@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 COMBO_SEPARATOR = " -> "
 BASELINE_KEY = "Baseline"
 
-_DEFAULT_CRITERION = nn.MSELoss
+_DEFAULT_CRITERION = nn.BCEWithLogitsLoss
 _DEFAULT_DEVICE = torch.device("cpu")
 
 
@@ -56,7 +56,7 @@ def evaluate(
 		train_loader: DataLoader for training data.
 		test_loader: DataLoader for test data.
 		validation_loader: DataLoader for validation data.
-		criterion: Loss function. Defaults to MSELoss.
+		criterion: Loss function. Defaults to BCEWithLogitsLoss.
 		device: Target device. Defaults to CPU.
 		num_epochs: Number of training epochs.
 		verbose: Whether to log training progress.
@@ -146,7 +146,7 @@ def evaluate_model(
 		test_loader: DataLoader for test data.
 		validation_loader: DataLoader for validation data.
 		training_config: Training hyperparameters.
-		criterion: Loss function. Defaults to MSELoss.
+		criterion: Loss function. Defaults to BCEWithLogitsLoss.
 		optimizer_class: Optimizer class. Defaults to Adam.
 		verbose: Whether to log training progress.
 		gpu_transforms: Optional GPU-side preprocessing transforms.
@@ -264,6 +264,7 @@ def run_combinations(
 	device: torch.device,
 	verbose: bool = False,
 	run_gradcam: bool = True,
+	seed: int = 42,
 ) -> dict[str, CombinationResult]:
 	"""Run all 65 preprocessing combinations for one confidence level.
 
@@ -273,6 +274,7 @@ def run_combinations(
 		device: Target device.
 		verbose: Whether to log per-model training progress.
 		run_gradcam: Whether to run Grad-CAM analysis after each model trains.
+		seed: Random seed for data splitting.
 
 	Returns:
 		Dict mapping combo_key to CombinationResult (65 entries).
@@ -281,7 +283,7 @@ def run_combinations(
 	all_combos = _generate_all_combinations(base_transforms)
 	results: dict[str, CombinationResult] = {}
 
-	train_loader, test_loader, val_loader = get_data_loaders(training_config)
+	train_loader, test_loader, val_loader = get_data_loaders(training_config, seed=seed)
 
 	for i, combo in enumerate(all_combos):
 		key = BASELINE_KEY if len(combo) == 0 else combo_key(combo)
@@ -337,6 +339,7 @@ def run_pipeline(
 	device: torch.device,
 	verbose: bool = False,
 	run_gradcam: bool = True,
+	seed: int = 42,
 ) -> dict[str, CombinationResult]:
 	"""Run the full 65-combination pipeline for one confidence level.
 
@@ -346,12 +349,13 @@ def run_pipeline(
 		device: Target device.
 		verbose: Whether to log per-model training progress.
 		run_gradcam: Whether to run Grad-CAM analysis after each model trains.
+		seed: Random seed for data splitting.
 
 	Returns:
 		Dict mapping combo_key to CombinationResult.
 	"""
-	logger.info("Starting pipeline for confidence level: %s", preprocess_config.confidence_level)
-	results = run_combinations(preprocess_config, training_config, device, verbose, run_gradcam)
+	logger.info("Starting pipeline for confidence level: %s (seed=%d)", preprocess_config.confidence_level, seed)
+	results = run_combinations(preprocess_config, training_config, device, verbose, run_gradcam, seed)
 	logger.info(
 		"Pipeline complete for %s: %d combinations evaluated",
 		preprocess_config.confidence_level,
@@ -366,8 +370,9 @@ def run_full_experiment(
 	device: torch.device,
 	verbose: bool = False,
 	run_gradcam: bool = True,
+	seed: int = 42,
 ) -> dict[str, dict[str, CombinationResult]]:
-	"""Run all combinations for all confidence levels (130 total evaluations).
+	"""Run all combinations for all confidence levels.
 
 	Args:
 		training_config: Training hyperparameters.
@@ -375,6 +380,7 @@ def run_full_experiment(
 		device: Target device.
 		verbose: Whether to log per-model training progress.
 		run_gradcam: Whether to run Grad-CAM analysis after each model trains.
+		seed: Random seed for data splitting.
 
 	Returns:
 		Nested dict: {confidence_level: {combo_key: CombinationResult}}.
@@ -382,20 +388,22 @@ def run_full_experiment(
 	results: dict[str, dict[str, CombinationResult]] = {}
 
 	for config in preprocess_configs:
-		logger.info("=== Confidence level: %s ===", config.confidence_level)
+		logger.info("=== Confidence level: %s (seed=%d) ===", config.confidence_level, seed)
 		results[config.confidence_level] = run_pipeline(
 			config,
 			training_config,
 			device,
 			verbose,
 			run_gradcam,
+			seed,
 		)
 
 	total = sum(len(v) for v in results.values())
 	logger.info(
-		"Full experiment complete: %d total evaluations across %d confidence levels",
+		"Full experiment complete: %d total evaluations across %d confidence levels (seed=%d)",
 		total,
 		len(results),
+		seed,
 	)
 
 	return results

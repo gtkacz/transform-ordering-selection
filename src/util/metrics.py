@@ -43,7 +43,7 @@ def compute_test_metrics(
 			with torch.amp.autocast("cuda", enabled=use_amp):
 				outputs = model(images).squeeze()
 
-			preds = (outputs > 0.5).float()
+			preds = (outputs > 0.0).float()
 
 			confusion_matrix["TP"] += int(torch.sum((preds == 1) & (labels == 1)).item())
 			confusion_matrix["TN"] += int(torch.sum((preds == 0) & (labels == 0)).item())
@@ -102,8 +102,8 @@ def compute_test_metrics_with_samples(
 			with torch.amp.autocast("cuda", enabled=use_amp):
 				outputs = model(images_dev).squeeze()
 
-			preds = (outputs > 0.5).float()
-			confs = outputs.cpu()
+			preds = (outputs > 0.0).float()
+			confs = torch.sigmoid(outputs).cpu()
 
 			confusion_matrix["TP"] += int(torch.sum((preds == 1) & (labels_dev == 1)).item())
 			confusion_matrix["TN"] += int(torch.sum((preds == 0) & (labels_dev == 0)).item())

@@ -74,7 +74,16 @@ class DenoiseTransform(nn.Module):
 		if needs_batch:
 			img = img.unsqueeze(0)
 
-		denoised = kornia.filters.bilateral_blur(img, self.kernel_size, self.sigma_color, self.sigma_space)
+		# bilateral_blur unfolds the input to B×C×H×W×K², so large batches
+		# with large kernels can exhaust GPU memory.
+		_MAX_CHUNK = 32
+		if img.size(0) > _MAX_CHUNK:
+			denoised = torch.cat([
+				kornia.filters.bilateral_blur(chunk, self.kernel_size, self.sigma_color, self.sigma_space)
+				for chunk in img.split(_MAX_CHUNK)
+			])
+		else:
+			denoised = kornia.filters.bilateral_blur(img, self.kernel_size, self.sigma_color, self.sigma_space)
 
 		if needs_batch:
 			denoised = denoised.squeeze(0)

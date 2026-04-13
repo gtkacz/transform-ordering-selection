@@ -59,8 +59,7 @@ class BinaryCNN(nn.Module):
 			nn.ReLU(),  # ReLU activation function
 			nn.Linear(512, 256),  # Fully connected layer with 256 units
 			nn.ReLU(),  # ReLU activation function
-			nn.Linear(256, 1),  # Binary output (1 unit)
-			nn.Sigmoid(),  # Sigmoid activation for binary classification
+			nn.Linear(256, 1),  # Binary output (1 unit) — raw logits
 		)
 
 	def forward(self, x):

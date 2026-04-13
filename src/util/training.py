@@ -64,7 +64,7 @@ def train_epoch(
 			optimizer.step()
 
 		running_loss += loss.item()
-		preds = (outputs > 0.5).float()
+		preds = (outputs > 0.0).float()
 		running_corrects += torch.sum(preds == labels).item()
 		total_samples += labels.size(0)
 
@@ -113,7 +113,7 @@ def validate_epoch(
 				loss = criterion(outputs, labels)
 
 			val_loss += loss.item()
-			preds = (outputs > 0.5).float()
+			preds = (outputs > 0.0).float()
 			running_corrects += torch.sum(preds == labels).item()
 			total_samples += labels.size(0)
 

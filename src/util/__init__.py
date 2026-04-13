@@ -39,5 +39,16 @@ from .runner import (
 	run_full_experiment,
 	run_pipeline,
 )
+from .statistics import (
+	ANOVAResult,
+	BootstrapCI,
+	CorrectedPValue,
+	PermutationTestResult,
+	bootstrap_ci,
+	holm_bonferroni,
+	one_way_anova,
+	permutation_correlation_test,
+	permutation_test,
+)
 from .training import train_epoch, validate_epoch
 from .types import ConfusionMatrix, LossFunction

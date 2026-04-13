@@ -49,11 +49,11 @@ def _grid_search(
 		Sorted list of result dicts (highest accuracy first).
 	"""
 	results: list[dict] = []
+	train_loader, test_loader, val_loader = get_data_loaders(training_config)
 
 	for params in param_grid:
 		logger.info("%s: %s", name, params)
 		gpu_transforms = build_transforms(params)
-		train_loader, test_loader, val_loader = get_data_loaders(training_config)
 
 		accuracy, confusion_matrix, training_time, *_ = evaluate_model(
 			device=device,
@@ -108,7 +108,10 @@ def main() -> None:
 		name="Denoise",
 		param_grid=[
 			{"template_window_size": t, "search_window_size": s}
-			for t, s in itertools.product(range(5, 11), range(20, 26))
+			for t, s in itertools.product(
+				[3, 5, 7, 9, 11],
+				range(15, 26),
+			)
 		],
 		build_transforms=lambda p: [
 			DenoiseTransform(
