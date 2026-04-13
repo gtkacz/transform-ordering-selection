@@ -1,6 +1,7 @@
 %% Converted from IEEEtran to elsarticle (Elsevier)
 %% Template: elsarticle-template-num (5p, two-column, numbered references)
-\documentclass[final,5p,times,twocolumn]{elsarticle}
+% \documentclass[final,5p,times,twocolumn]{elsarticle}
+\documentclass[preprint,review,12pt]{elsarticle}
 
 % --- Packages ---
 \usepackage{amsmath,amsfonts,amssymb}
@@ -26,7 +27,7 @@
 
 \hyphenation{op-tical net-works semi-conduc-tor pre-proc-ess-ing der-ma-to-log-i-cal}
 
-\journal{}
+\journal{Computers in Biology and Medicine}
 
 \begin{document}
 
@@ -40,7 +41,7 @@
 \tnotetext[funding]{This work received funding from the Brazilian Federal Agency for Support and Evaluation of Graduate Education (CAPES Foundation).}
 
 \author[mack]{Gabriel Mitelman Tkacz\corref{cor1}\orcidlink{0009-0004-3619-4561}}
-\ead{gabriel.tkacz@ieee.org}
+\ead{gabriel@tkacz.dev.br}
 
 \author[mack]{Gustavo Scalabrini Sampaio\orcidlink{0000-0003-1150-5584}}
 \ead{gustavo.sampaio@mackenzie.br}
@@ -60,7 +61,7 @@ Image preprocessing is a near-universal step in medical image classification pip
 \end{abstract}
 
 \begin{keyword}
-Image preprocessing \sep preprocessing pipeline design \sep transform ordering \sep convolutional neural networks \sep medical image classification \sep dermatological diagnosis \sep computer-aided detection
+Image preprocessing \sep transform ordering \sep preprocessing pipeline design \sep convolutional neural networks \sep medical image classification \sep dermatological diagnosis
 \end{keyword}
 
 \end{frontmatter}
@@ -153,7 +154,7 @@ The central methodological contribution of this study is the exhaustive evaluati
 \sum_{k=1}^{4} P(4, k) = \sum_{k=1}^{4} \frac{4!}{(4-k)!} = 4 + 12 + 24 + 24 = 64,
 \label{eq:combinatorics}
 \end{equation}
-which, together with the unprocessed baseline (length zero), yields 65 evaluated configurations; each of the 65 was trained from scratch under each of the five seeds listed in Section~III.A, for a total of 325 training runs per confidence regime.
+which, together with the unprocessed baseline (length zero), yields 65 evaluated configurations; each of the 65 was trained from scratch under each of the five seeds listed in Section~\ref{sec:methodology}.A, for a total of 325 training runs per confidence regime.
 
 This design is distinguished from prior work in two respects. First, it evaluates all orderings of each transform subset, not merely a single conventional ordering. For instance, the three-element subset $\{\text{E}, \text{D}, \text{N}\}$ is evaluated in all six orderings: E$\to$D$\to$N, E$\to$N$\to$D, D$\to$E$\to$N, D$\to$N$\to$E, N$\to$D$\to$E, and N$\to$E$\to$D. Second, by spanning all pipeline lengths, the design enables direct statistical comparison of performance as a function of pipeline complexity.
 
@@ -445,10 +446,32 @@ The authors thank the Brazilian Federal Agency for Support and Evaluation of Gra
 
 
 % ===================================================================
+% CREDIT AUTHORSHIP CONTRIBUTION STATEMENT
+% ===================================================================
+\section*{CRediT authorship contribution statement}
+\textbf{Gabriel Mitelman Tkacz}: Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data curation, Writing -- original draft, Writing -- review \& editing, Visualization. \\
+\textbf{Gustavo Scalabrini Sampaio}: Conceptualization, Methodology, Supervision, Writing -- review \& editing, Project administration.
+
+
+% ===================================================================
+% DECLARATION OF COMPETING INTEREST
+% ===================================================================
+\section*{Declaration of competing interest}
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+
+
+% ===================================================================
+% DECLARATION OF GENERATIVE AI
+% ===================================================================
+\section*{Declaration of generative AI and AI-assisted technologies in the writing process}
+During the preparation of this work the authors used large language model assistants (Anthropic Claude) to support literature cross-checking, prose editing, and LaTeX formatting. After using these tools, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
+
+
+% ===================================================================
 % DATA AVAILABILITY
 % ===================================================================
-\section*{Data and Code Availability}
-The HAM10000 dataset is publicly available via the ISIC Archive and the Harvard Dataverse~\cite{Tschandl2018}. The Healthy Skin dataset used to construct the negative class is distributed by its original authors~\cite{megpaulson_healthy_skin}. All training code, preprocessing transform implementations, grid-search configurations, analysis scripts, and the aggregated multi-seed analysis JSON reporting per-pipeline means, standard deviations, bootstrap 95\% confidence intervals, and statistical-test outputs have been released for independent replication at https://github.com/gtkacz/transform-ordering-selection. The five random seeds used in this study are $\{42, 123, 256, 512, 1024\}$.
+\section*{Data availability}
+The HAM10000 dataset is publicly available via the ISIC Archive and the Harvard Dataverse~\cite{Tschandl2018}. The Healthy Skin dataset used to construct the negative class is distributed by its original authors~\cite{megpaulson_healthy_skin}. All training code, preprocessing transform implementations, grid-search configurations, analysis scripts, and the aggregated multi-seed analysis JSON reporting per-pipeline means, standard deviations, bootstrap 95\% confidence intervals, and statistical-test outputs have been released for independent replication at \url{https://github.com/gtkacz/transform-ordering-selection}. The five random seeds used in this study are $\{42, 123, 256, 512, 1024\}$.
 
 % ===================================================================
 % REFERENCES
